@@ -28,7 +28,8 @@ private:
 	Node* m_root;
 	void deleteTree(Node* cur);
 	void insertHelper(Node* cur, const std::string & key, const ValueType & value);
-	std::vector<ValueType> findHelper(Node* cur, const std::string & key, std::vector<ValueType>& matches, const bool b) const;
+	std::vector<ValueType> findHelper(Node* cur, const std::string & key,
+		std::vector<ValueType>& matches, bool b, bool notfirstChar) const;
 };
 
 #endif // TRIE_INCLUDED
@@ -61,8 +62,7 @@ void Trie<ValueType>::insert(const std::string & key, const ValueType & value)
 template<typename ValueType>
 void Trie<ValueType>::insertHelper(Node* cur, const std::string & key, const ValueType & value) 
 {
-	typename list<Node*>::iterator it = cur->chn.begin();   //iterator point's to a node's child
-	for (; it != cur->chn.end(); it++)
+	for (typename list<Node*>::iterator it = cur->chn.begin(); it != cur->chn.end(); it++)
 	{
 		Node* child = *it;
 		if (key[0] == child->label)                          //key char matches label of a child
@@ -89,28 +89,30 @@ template<typename ValueType>
 std::vector<ValueType> Trie<ValueType>::find(const std::string & key, bool exactMatchOnly) const
 {
 	std::vector<ValueType> matches;
-	findHelper(m_root, key, matches, exactMatchOnly);
+	findHelper(m_root, key, matches, exactMatchOnly, false);
 	return matches;
 }
 
 template<typename ValueType>
 std::vector<ValueType> Trie<ValueType>::findHelper(Node* cur, const std::string & key, 
-	std::vector<ValueType>& matches, const bool b) const
-{
-	typename list<Node*>::iterator it = cur->chn.begin();   //iterator point's to a node's child
-	for (; it != cur->chn.end(); it++)
+	std::vector<ValueType>& matches, bool b, bool notfirstChar) const
+{ 
+	for (typename list<Node*>::iterator it = cur->chn.begin(); it != cur->chn.end(); it++)
 	{
 		Node* child = *it;
-		if (key[0] == child->label)                          //key char matches label of a child
+		if (key[0] == child->label || (!b && notfirstChar))
 		{
 			if (key.size() == 1) {
-				typename list<ValueType>::iterator valsIt = child->vals.begin();
-				for (; valsIt != child->vals.end(); valsIt++) {
+				for (typename list<ValueType>::iterator valsIt = child->vals.begin(); valsIt != child->vals.end(); valsIt++) {
 					matches.push_back(*valsIt);
 				}
 			}
 			else
-				findHelper(child, key.substr(1), matches);
+			{
+				if (key[0] != child->label)
+					b = true;
+				findHelper(child, key.substr(1), matches, b, true);
+			}
 		}
 	}
 	return matches;
