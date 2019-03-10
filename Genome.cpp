@@ -14,31 +14,34 @@ public:
     string name() const;
     bool extract(int position, int length, string& fragment) const;
 private:
+	string m_name;
+	string m_dna;
 };
 
 GenomeImpl::GenomeImpl(const string& nm, const string& sequence)
-{
-    // This compiles, but may not be correct
-}
+	: m_name(nm), m_dna(sequence)
+{}
 
 bool GenomeImpl::load(istream& genomeSource, vector<Genome>& genomes) 
 {
-    return false;  // This compiles, but may not be correct
+	return 0;
 }
 
 int GenomeImpl::length() const
 {
-    return 0;  // This compiles, but may not be correct
+	return m_dna.size();
 }
 
 string GenomeImpl::name() const
 {
-    return "";  // This compiles, but may not be correct
+	return m_name;
 }
 
 bool GenomeImpl::extract(int position, int length, string& fragment) const
 {
-    return false;  // This compiles, but may not be correct
+	if (length < 0 || position < 0)
+		return false; 
+	
 }
 
 //******************** Genome functions ************************************
