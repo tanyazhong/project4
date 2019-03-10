@@ -3,6 +3,7 @@
 #include <vector>
 #include <iostream>
 #include <istream>
+#include <fstream>
 using namespace std;
 
 class GenomeImpl
@@ -24,7 +25,61 @@ GenomeImpl::GenomeImpl(const string& nm, const string& sequence)
 
 bool GenomeImpl::load(istream& genomeSource, vector<Genome>& genomes) 
 {
-	return 0;
+	if (!genomeSource)		        // Did opening the file fail?
+	{
+		cerr << "Error: Cannot open file" << endl;
+		return false;
+	}
+	char c; string s; string dna; bool justNewlined = false; Genome* g;
+	genomeSource.get(c);
+	if (c != '>')                //check that the file starts with a name line
+	{
+		cerr << "Error: file does not start with a name line" << endl;
+		return false;
+	}
+	else 
+	{
+		getline(genomeSource, s);  //read in the name of the first organism in the file
+	}
+	while (genomeSource.get(c))
+	{
+		switch (c)
+		{
+		case 'A':
+		case 'C':
+		case 'T':
+		case 'G':
+		case 'N':
+		case 'a':
+		case 'c':
+		case 't':
+		case 'g':
+		case 'n':
+			justNewlined = false;
+			dna += toupper(c);
+			break;
+		case '\n':
+			if (justNewlined)
+				return false;
+			else
+				justNewlined = true;
+			break;
+		case '>':
+			if (dna == "" || s == "")
+				return false;
+			g = new Genome(s, dna);
+			genomes.push_back(*g);
+			s = ""; dna = "";
+			getline(genomeSource, s);
+			justNewlined = false;
+			break;
+		default:
+			return false;
+		}
+	}
+	g = new Genome(s, dna);
+	genomes.push_back(*g);
+	return true;
 }
 
 int GenomeImpl::length() const
@@ -41,7 +96,7 @@ bool GenomeImpl::extract(int position, int length, string& fragment) const
 {
 	if (length < 0 || position < 0)
 		return false; 
-	
+	return true;
 }
 
 //******************** Genome functions ************************************
@@ -90,4 +145,23 @@ string Genome::name() const
 bool Genome::extract(int position, int length, string& fragment) const
 {
     return m_impl->extract(position, length, fragment);
+}
+
+
+int main()
+{
+	ifstream inF("C:/Users/Tanya/Documents/cs32/Gee-nomics/data/test.txt");
+	vector<Genome>	vg;
+	bool success = Genome::load(inF, vg);
+	if (success)
+	{
+		cout << "Loaded	" << vg.size() << " genomes successfully:" << endl;
+		for (int k = 0; k != vg.size(); k++)
+		{
+			cout << vg[k].name() << endl;
+			cout << vg[k].length() << endl;
+		}
+	}
+	else
+		cout << "Error	loading	genome	data" << endl;
 }

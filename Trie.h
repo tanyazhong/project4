@@ -49,7 +49,7 @@ Trie<ValueType>::~Trie()
 template<typename ValueType>
 void Trie<ValueType>::reset()             //this is a trie
 {
-	deleteNode(m_root);
+	deleteTree(m_root);
 	m_root = new Node;
 }
 
