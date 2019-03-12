@@ -3,6 +3,7 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <algorithm>
 #include "Trie.h"
 using namespace std;
 
@@ -22,6 +23,12 @@ private:
 		const Genome* gnome;
 		int length;
 		int position;
+
+		bool operator< (const DNAMatchPlus other) {
+			if (length < other.length)
+				return true;
+			return false;
+		}
 	};
 
 	int m_searchMin;
@@ -39,13 +46,13 @@ void GenomeMatcherImpl::addGenome(const Genome& genome)
 	int size = genome.length();
 	for (int i = 0; i <= size - m_searchMin; i++) 
 	{
-		DNAMatchPlus* newDNA = new DNAMatchPlus;          //create a new dnamatch for each fragment
-		newDNA->gnome = &genome;
-		newDNA->position = i;
-		newDNA->length = m_searchMin;
+		DNAMatchPlus newDNA;          //create a new dnamatch for each fragment
+		newDNA.gnome = &genome;
+		newDNA.position = i;
+		newDNA.length = m_searchMin;
 		string frag;
-		if (genome.extract(i, m_searchMin, frag))
-			m_genomeData.insert(frag, *newDNA);
+		if (genome.extract(i, m_searchMin, frag)) 
+			m_genomeData.insert(frag, newDNA);
 	}
 }
 
@@ -57,27 +64,48 @@ int GenomeMatcherImpl::minimumSearchLength() const
 bool GenomeMatcherImpl::findGenomesWithThisDNA(const string& fragment, int minimumLength,
 	bool exactMatchOnly, vector<DNAMatch>& matches) const
 {
-	int size = fragment.size();
-	if (size < minimumLength || minimumLength < m_searchMin || minimumLength < 0)
+	int fsize = fragment.size();
+	if (fsize < minimumLength || minimumLength < m_searchMin || minimumLength < 0)
 		return false;
 
 	vector<DNAMatchPlus> someMatches;
-	string minFrag = fragment.substr(0, m_searchMin);
-	someMatches = m_genomeData.find(minFrag, exactMatchOnly);
+	string minFrag = fragment.substr(0, m_searchMin);  //get the first searchMin bases of the fragment
+	someMatches = m_genomeData.find(minFrag, exactMatchOnly);       //now search for thme
 	//now somematches holds fragment matches of the first searchMin bases, found by the trie
 	int n = someMatches.size();
-	for (int i = 0; i != n; i++)
+	for (int i = 0; i != n; i++)      //iterate over the matches
 	{
 		DNAMatchPlus* curMatch = &someMatches[i];
-		int curMatchPos = curMatch->position;
-		string s;
-		if(curMatch->gnome->extract(m_searchMin, 1, s))
-
-
-
+		int curMatchPos = curMatch->position;      //get the match's position in the genome
+		string genNextBase;
+		string fragNextBase;
+		int curPos = m_searchMin;
+		if (curPos <= fsize)
+			fragNextBase += fragment[curPos];      //get the next base of the fragment
+		if (!curMatch->gnome->extract(curPos, 1, genNextBase))  //get the next base from the genome
+			genNextBase = "";
+		while (genNextBase == fragNextBase && fragNextBase != "")         //matches
+		{
+			curMatch->length++;                  //increase length info
+			curPos++;
+			if (curPos <= fsize)
+				fragNextBase = fragment[curPos];      //get the next base of the fragment
+			if (!curMatch->gnome->extract(curPos, 1, genNextBase))  //get the next base from the genome
+				genNextBase = "";
+		}
 	}
-
-
+	//now somematches should hold the longest fragments. need to sort
+	sort(someMatches.begin(), someMatches.end());
+	DNAMatchPlus* source = &someMatches[0];
+	DNAMatch target;
+	target.genomeName = source->gnome->name();
+	target.length = source->length;
+	target.position = source->position;
+	if (target.length >= minimumLength) {
+		matches.push_back(target);
+		return true;
+	}
+	return false;
 }
 
 bool GenomeMatcherImpl::findRelatedGenomes(const Genome& query, int fragmentMatchLength, 
@@ -86,6 +114,13 @@ bool GenomeMatcherImpl::findRelatedGenomes(const Genome& query, int fragmentMatc
     return false;  // This compiles, but may not be correct
 }
 
+/*
+int main() {
+	GenomeMatcher gm(3);
+	Genome org1("org1", "actgactg");
+	gm.addGenome(org1);
+}
+*/
 
 //******************** GenomeMatcher functions ********************************
 

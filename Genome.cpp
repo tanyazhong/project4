@@ -173,7 +173,7 @@ bool Genome::extract(int position, int length, string& fragment) const
 }
 
 
-/*
+
 int main()
 {
 	ifstream inF("C:/Users/Tanya/Documents/cs32/Gee-nomics/data/test.txt");
@@ -187,7 +187,7 @@ int main()
 		{
 			cout << vg[k].name() << endl;
 			cout << vg[k].length() << endl;
-			if (vg[k].extract(0, 9, s))
+			if (vg[k].extract(0, 3, s))
 				cout << s << endl;
 			else
 				cout << "couldn't extract fragment" << endl;
@@ -196,4 +196,4 @@ int main()
 	else
 		cout << "Error loading genome data" << endl;
 }
-*/
+
