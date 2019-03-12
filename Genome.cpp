@@ -60,13 +60,24 @@ bool GenomeImpl::load(istream& genomeSource, vector<Genome>& genomes)
 			break;
 		case '\n':
 			if (justNewlined)
+			{
+				cerr << "Error: file contains empty line" << endl;
 				return false;
+			}
 			else
 				justNewlined = true;
 			break;
 		case '>':
-			if (dna == "" || s == "")
+			if (dna == "")
+			{
+				cerr << "Error: no bases after name line" << endl;
 				return false;
+			}
+			if (s == "")
+			{
+				cerr << "Error: no characters after > in name line" << endl;
+				return false;
+			}
 			g = new Genome(s, dna);
 			genomes.push_back(*g);
 			s = ""; dna = "";
@@ -74,8 +85,20 @@ bool GenomeImpl::load(istream& genomeSource, vector<Genome>& genomes)
 			justNewlined = false;
 			break;
 		default:
+			cerr << "Error: invalid base character" << endl;
 			return false;
 		}
+	}
+
+	if (dna == "")
+	{
+		cerr << "Error: no bases after name line" << endl;
+		return false;
+	}
+	if (s == "")
+	{
+		cerr << "Error: no characters after > in name line" << endl;
+		return false;
 	}
 	g = new Genome(s, dna);
 	genomes.push_back(*g);
@@ -96,7 +119,9 @@ bool GenomeImpl::extract(int position, int length, string& fragment) const
 {
 	if (length < 0 || position < 0)
 		return false; 
-	return true;
+	if (position >= GenomeImpl::length() || (position + length) > GenomeImpl::length())
+		return false;
+	fragment = m_dna.substr(position, length);
 }
 
 //******************** Genome functions ************************************
@@ -148,20 +173,27 @@ bool Genome::extract(int position, int length, string& fragment) const
 }
 
 
+/*
 int main()
 {
 	ifstream inF("C:/Users/Tanya/Documents/cs32/Gee-nomics/data/test.txt");
 	vector<Genome>	vg;
 	bool success = Genome::load(inF, vg);
+	string s;
 	if (success)
 	{
-		cout << "Loaded	" << vg.size() << " genomes successfully:" << endl;
+		cout << "Loaded " << vg.size() << " genomes successfully:" << endl;
 		for (int k = 0; k != vg.size(); k++)
 		{
 			cout << vg[k].name() << endl;
 			cout << vg[k].length() << endl;
+			if (vg[k].extract(0, 9, s))
+				cout << s << endl;
+			else
+				cout << "couldn't extract fragment" << endl;
 		}
 	}
 	else
-		cout << "Error	loading	genome	data" << endl;
+		cout << "Error loading genome data" << endl;
 }
+*/
