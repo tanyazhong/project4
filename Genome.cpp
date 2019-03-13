@@ -119,7 +119,7 @@ bool GenomeImpl::extract(int position, int length, string& fragment) const
 {
 	if (length < 0 || position < 0)
 		return false; 
-	if (position >= GenomeImpl::length() || (position + length) > GenomeImpl::length())
+	if (position >= this->length() || (position + length) > this->length())
 		return false;
 	fragment = m_dna.substr(position, length);
 }
@@ -172,7 +172,7 @@ bool Genome::extract(int position, int length, string& fragment) const
     return m_impl->extract(position, length, fragment);
 }
 
-
+/*
 
 int main()
 {
@@ -196,4 +196,6 @@ int main()
 	else
 		cout << "Error loading genome data" << endl;
 }
+
+*/
 

@@ -261,7 +261,7 @@ void showMenu()
 	cout << "         d - load all provided data files   ? - show this menu" << endl;
 	cout << "         e - find matches exactly           q - quit" << endl;
 }
-/*
+
 int main()
 {
 	const int defaultMinSearchLength = 10;
@@ -318,6 +318,5 @@ int main()
 		}
 	}
 }
-*/
 
 
