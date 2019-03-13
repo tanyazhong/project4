@@ -20,8 +20,10 @@ private:
 };
 
 GenomeImpl::GenomeImpl(const string& nm, const string& sequence)
-	: m_name(nm), m_dna(sequence)
-{}
+{
+	m_name = nm;
+	m_dna = sequence;
+}
 
 bool GenomeImpl::load(istream& genomeSource, vector<Genome>& genomes) 
 {

@@ -18,15 +18,9 @@ public:
     bool findRelatedGenomes(const Genome& query, int fragmentMatchLength,
 		bool exactMatchOnly, double matchPercentThreshold, vector<GenomeMatch>& results) const;
 private:
-	struct DNAMatchPlus
-	{
-		const Genome* gnome;
-		int length;
-		int position;
-	};
 	int m_searchMin;
-	list<Genome> m_genomeList;
-	Trie<DNAMatchPlus> m_genomeData;
+	vector<Genome> m_genomeVec;
+	Trie<DNAMatch> m_genomeData;
 };
 
 GenomeMatcherImpl::GenomeMatcherImpl(int minSearchLength)
@@ -35,12 +29,12 @@ GenomeMatcherImpl::GenomeMatcherImpl(int minSearchLength)
 
 void GenomeMatcherImpl::addGenome(const Genome& genome)
 {
-	m_genomeList.push_back(genome);
+	m_genomeVec.push_back(genome);
 	int size = genome.length();
 	for (int i = 0; i <= size - m_searchMin; i++) 
 	{
-		DNAMatchPlus newDNA;          //create a new dnamatch for each fragment
-		newDNA.gnome = &genome;
+		DNAMatch newDNA;          //create a new dnamatch for each fragment
+		newDNA.genomeName = genome.name();
 		newDNA.position = i;
 		newDNA.length = m_searchMin;
 		string frag;
@@ -59,34 +53,40 @@ int GenomeMatcherImpl::minimumSearchLength() const
 bool GenomeMatcherImpl::findGenomesWithThisDNA(const string& fragment, int minimumLength,
 	bool exactMatchOnly, vector<DNAMatch>& matches) const
 {
-	int fsize = fragment.size();
+	const int fsize = fragment.size();
+	const int genomeVecSize = m_genomeVec.size();
 	if (fsize < minimumLength || minimumLength < m_searchMin || minimumLength < 0)
 		return false;
 
-	vector<DNAMatchPlus> someMatches;
 	string minFrag = fragment.substr(0, m_searchMin);  //get the first searchMin bases of the fragment
-	someMatches = m_genomeData.find(minFrag, exactMatchOnly);       //now search for thme
+	vector<DNAMatch> someMatches = m_genomeData.find(minFrag, exactMatchOnly);       //now search for thme
+
 	//now somematches holds fragment matches of the first searchMin bases, found by the trie
 	int n = someMatches.size();
 	for (int i = 0; i != n; i++)      //iterate over the matches
 	{
-		DNAMatchPlus* curMatch = &someMatches[i];
+		DNAMatch* curMatch = &(someMatches[i]);
+		const Genome* curGenome = nullptr;
+		for (int i = 0; i != genomeVecSize; i++) {
+			if (m_genomeVec[i].name() == curMatch->genomeName)
+				curGenome = &m_genomeVec[i];
+		}
 		int curMatchPos = curMatch->position + m_searchMin;      //get the match's position in the genome
 		string genNextBase;
 		string fragNextBase;
 		int curPos = m_searchMin;
 		if (curPos <= fsize)
 			fragNextBase += fragment[curPos];      //get the next base of the fragment
-		if (!curMatch->gnome->extract(curMatchPos, 1, genNextBase))  //get the next base from the genome
+		if (curGenome == nullptr || !curGenome->extract(curMatchPos, 1, genNextBase))  //get the next base from the genome
 			genNextBase = "";
 		while (genNextBase == fragNextBase && fragNextBase != "")         //matches
 		{
-			curMatch->length++;                  //increase length info
+			curMatch->length++;                      //increase length info
 			curPos++;
 			curMatchPos++;
 			if (curPos <= fsize)
 				fragNextBase = fragment[curPos];      //get the next base of the fragment
-			if (!curMatch->gnome->extract(curMatchPos, 1, genNextBase))  //get the next base from the genome
+			if (!curGenome->extract(curMatchPos, 1, genNextBase))  //get the next base from the genome
 				genNextBase = "";
 		}
 	}
@@ -94,21 +94,19 @@ bool GenomeMatcherImpl::findGenomesWithThisDNA(const string& fragment, int minim
 	if (n == 0)
 		return false;
 
-	const Genome* curGenome = someMatches[0].gnome;     //temp pointer to first element's genome
-	DNAMatchPlus curMatch = someMatches[0];
+	DNAMatch curMatch = someMatches[0];
+	string curGenomeName = curMatch.genomeName;
 	bool needToPush = true;
+
 	for ( int i = 0; i != n; i++)
 	{
-		while (i != n && someMatches[i].gnome == curGenome)
+		while (i != n && someMatches[i].genomeName == curGenomeName)
 		{
 			if (someMatches[i].length > curMatch.length)
 				curMatch = someMatches[i];
 			i++;
 		}
-		DNAMatch target;
-		target.genomeName = curMatch.gnome->name();
-		target.length = curMatch.length;
-		target.position = curMatch.position;
+		DNAMatch target = curMatch;
 		if (target.length >= minimumLength) 
 			matches.push_back(target);
 		if (i == n) {
@@ -116,14 +114,11 @@ bool GenomeMatcherImpl::findGenomesWithThisDNA(const string& fragment, int minim
 			break;
 		}
 		curMatch = someMatches[i];
-		curGenome = someMatches[i].gnome;
+		curGenomeName = someMatches[i].genomeName;
 	}
 	if (needToPush) 
 	{
-		DNAMatch target;
-		target.genomeName = curMatch.gnome->name();
-		target.length = curMatch.length;
-		target.position = curMatch.position;
+		DNAMatch target = curMatch;
 		if (target.length >= minimumLength)
 			matches.push_back(target);
 	}
