@@ -124,6 +124,7 @@ bool GenomeImpl::extract(int position, int length, string& fragment) const
 	if (position >= this->length() || (position + length) > this->length())
 		return false;
 	fragment = m_dna.substr(position, length);
+	return true;
 }
 
 //******************** Genome functions ************************************

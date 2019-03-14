@@ -3,6 +3,7 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <map>
 #include <algorithm>
 #include "Trie.h"
 using namespace std;
@@ -21,11 +22,13 @@ private:
 	int m_searchMin;
 	vector<Genome> m_genomeVec;
 	Trie<DNAMatch> m_genomeData;
+	double round(double var) const;
 };
 
 GenomeMatcherImpl::GenomeMatcherImpl(int minSearchLength)
 	:m_searchMin(minSearchLength)
 {}
+
 
 void GenomeMatcherImpl::addGenome(const Genome& genome)
 {
@@ -128,9 +131,46 @@ bool GenomeMatcherImpl::findGenomesWithThisDNA(const string& fragment, int minim
 bool GenomeMatcherImpl::findRelatedGenomes(const Genome& query, int fragmentMatchLength, 
 	bool exactMatchOnly, double matchPercentThreshold, vector<GenomeMatch>& results) const
 {
-    return false;  // This compiles, but may not be correct
+	if (matchPercentThreshold < 0 || matchPercentThreshold > 100)
+		return false;
+	int num = query.length() / fragmentMatchLength;
+	string curFrag;
+	vector<DNAMatch> matches;
+	int nMatches;
+	map<string, int> genomeToMatchCount;
+	for (int i = 0; i != num; i++)
+	{
+		query.extract(i*fragmentMatchLength, fragmentMatchLength, curFrag);
+		findGenomesWithThisDNA(curFrag, 12, exactMatchOnly, matches);
+		nMatches = matches.size();
+		for (int j = 0; j != nMatches; j++)  //for every genome that returns a match to this fragment 
+		{
+			string curGenName = matches[j].genomeName;
+			if (genomeToMatchCount.find(curGenName) == genomeToMatchCount.end()) {  //if its not in the map
+				genomeToMatchCount[curGenName] = 1;                                 //add it and say there's 1 match
+			}
+			else
+				genomeToMatchCount[curGenName]++;
+		}
+	}
+	int mapSize = genomeToMatchCount.size();
+	GenomeMatch* g;
+	map<string, int>::iterator it = genomeToMatchCount.begin();
+	for (; it != genomeToMatchCount.end(); it++)
+	{
+		g->genomeName = (*it).first;
+		g->percentMatch = round((*it).second / num);
+		if (g->percentMatch >= matchPercentThreshold)
+			results.push_back(*g);
+	}
+	return results.size() > 0;
 }
 
+double GenomeMatcherImpl::round(double var) const
+{
+	double value = (int)(0.5 + var * 100);
+	return (double)value / 100;
+}
 /*
 int main() {
 	GenomeMatcher gm(3);
