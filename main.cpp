@@ -16,7 +16,7 @@ using namespace std;
 // "Z:/CS32/Geenomics/data" or "/Users/fred/cs32/Geenomics/data"
 
 const string PROVIDED_DIR = "C:/Users/Tanya/Documents/cs32/Gee-nomics/data";
-
+/*
 const string providedFiles[] = {
 	"Ferroplasma_acidarmanus.txt",
 	"Halobacterium_jilantaiense.txt",
@@ -318,3 +318,4 @@ int main()
 		}
 	}
 }
+*/

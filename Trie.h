@@ -62,7 +62,8 @@ void Trie<ValueType>::insert(const std::string & key, const ValueType & value)
 template<typename ValueType>
 void Trie<ValueType>::insertHelper(Node* cur, const std::string & key, const ValueType & value) 
 {
-	for (typename list<Node*>::iterator it = cur->chn.begin(); it != cur->chn.end(); it++)
+	typename std::list<Node*>::iterator it = cur->chn.begin();
+	for (; it != cur->chn.end(); it++)
 	{
 		Node* child = *it;
 		if (key[0] == child->label)                          //key char matches label of a child
@@ -97,13 +98,15 @@ template<typename ValueType>
 std::vector<ValueType> Trie<ValueType>::findHelper(Node* cur, const std::string & key, 
 	std::vector<ValueType>& matches, bool b, bool notfirstChar) const
 { 
-	for (typename list<Node*>::iterator it = cur->chn.begin(); it != cur->chn.end(); it++)
+	typename std::list<Node*>::iterator it = cur->chn.begin();
+	for (; it != cur->chn.end(); it++)
 	{
 		Node* child = *it;
 		if (key[0] == child->label || (!b && notfirstChar))
 		{
 			if (key.size() == 1) {
-				for (typename list<ValueType>::iterator valsIt = child->vals.begin(); valsIt != child->vals.end(); valsIt++) {
+				typename std::list<ValueType>::iterator valsIt = child->vals.begin();
+				for (; valsIt != child->vals.end(); valsIt++) {
 					matches.push_back(*valsIt);
 				}
 			}
@@ -123,12 +126,11 @@ void Trie<ValueType>::deleteTree(Node * cur) //ASK ABOUT DELETE FUNC
 {
 	if (this == nullptr)
 		return;
-
 	typename std::list<Node*>::iterator nodeIt = cur->chn.begin();
-	for (; nodeIt != cur->chn.end(); nodeIt++)        //recurse over the children
+	for (; nodeIt != cur->chn.end(); )        //recurse over the children
 	{
-		nodeIt = cur->chn.begin();
 		deleteTree(*nodeIt);
+		nodeIt = cur->chn.erase(nodeIt);
 	}
 
 	delete cur;

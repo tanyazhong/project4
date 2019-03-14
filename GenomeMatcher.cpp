@@ -8,6 +8,8 @@
 #include "Trie.h"
 using namespace std;
 
+bool compareGenomeMatch(const GenomeMatch& lhs, const GenomeMatch& rhs);
+
 class GenomeMatcherImpl
 {
 public:
@@ -141,7 +143,7 @@ bool GenomeMatcherImpl::findRelatedGenomes(const Genome& query, int fragmentMatc
 	for (int i = 0; i != num; i++)
 	{
 		query.extract(i*fragmentMatchLength, fragmentMatchLength, curFrag);
-		findGenomesWithThisDNA(curFrag, 12, exactMatchOnly, matches);
+		findGenomesWithThisDNA(curFrag, fragmentMatchLength, exactMatchOnly, matches);
 		nMatches = matches.size();
 		for (int j = 0; j != nMatches; j++)  //for every genome that returns a match to this fragment 
 		{
@@ -153,29 +155,41 @@ bool GenomeMatcherImpl::findRelatedGenomes(const Genome& query, int fragmentMatc
 				genomeToMatchCount[curGenName]++;
 		}
 	}
-	int mapSize = genomeToMatchCount.size();
-	GenomeMatch* g;
+	GenomeMatch g;
 	map<string, int>::iterator it = genomeToMatchCount.begin();
 	for (; it != genomeToMatchCount.end(); it++)
 	{
-		g->genomeName = (*it).first;
-		g->percentMatch = round((*it).second / num);
-		if (g->percentMatch >= matchPercentThreshold)
-			results.push_back(*g);
+		g.genomeName = (*it).first;
+		g.percentMatch = 100* (*it).second / num;
+		if (g.percentMatch >= matchPercentThreshold)
+			results.push_back(g);
 	}
+	sort(results.begin(), results.end(), compareGenomeMatch);
 	return results.size() > 0;
 }
 
 double GenomeMatcherImpl::round(double var) const
 {
 	double value = (int)(0.5 + var * 100);
-	return (double)value / 100;
+	return (double) (value / 100);
 }
-/*
+
+bool compareGenomeMatch(const GenomeMatch & lhs, const GenomeMatch & rhs)
+{
+	if (lhs.percentMatch > rhs.percentMatch)
+		return true;
+	if (lhs.percentMatch < rhs.percentMatch)
+		return false;
+	return lhs.genomeName < rhs.genomeName;
+}
+
 int main() {
 	GenomeMatcher gm(3);
-	Genome yeti("yeti", "acgtacgtaaaaccccggggttttnanananana");
+	Genome yeti("yeti", "aaaaccccggggtttt");
+	Genome other("other", "aaaaccccggggtttt");
 	gm.addGenome(yeti);
+	vector<GenomeMatch> gmv;
+/*
 	vector <DNAMatch> m;
 	if (gm.findGenomesWithThisDNA("aaaaccccggggtttt", 12, true, m))
 		cerr << "Found some matches " << m.size() << endl;
@@ -185,8 +199,17 @@ int main() {
 		cerr << "here's a match: " << m[i].genomeName << " position " 
 			<< m[i].position << " length " << m[i].length << endl;
 	}
+	*/
+	
+	if (gm.findRelatedGenomes(other, 12, true, 20, gmv))
+		cerr << "Found some matches " << gmv.size() << endl;
+	else
+		cerr << "find returned false" << endl;
+	for (int i = 0; i != gmv.size(); i++) {
+		cerr << "here's a match: " << gmv[i].genomeName << " percent match "
+			<< gmv[i].percentMatch << endl;
+	}
 }
-*/
 
 //******************** GenomeMatcher functions ********************************
 
