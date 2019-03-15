@@ -16,7 +16,7 @@ using namespace std;
 // "Z:/CS32/Geenomics/data" or "/Users/fred/cs32/Geenomics/data"
 
 const string PROVIDED_DIR = "C:/Users/Tanya/Documents/cs32/Gee-nomics/data";
-/*
+
 const string providedFiles[] = {
 	"Ferroplasma_acidarmanus.txt",
 	"Halobacterium_jilantaiense.txt",
@@ -317,5 +317,22 @@ int main()
 			break;
 		}
 	}
+}
+
+/*
+int main()
+{
+	Trie<int> t;
+	t.insert("ACGTACGTCC", 1);
+	t.insert("AAAAGGGGCC", 9);
+
+
+	vector<int> v;
+	v = t.find("AAAAGGTGCC", false);
+	for (int i = 0; i != v.size(); i++)
+	{
+		cout << v[i] << endl;
+	}
+	cout << "i'm trie-ing" << endl;
 }
 */

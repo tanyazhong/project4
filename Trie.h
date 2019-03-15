@@ -29,7 +29,7 @@ private:
 	void deleteTree(Node* cur);
 	void insertHelper(Node* cur, const std::string & key, const ValueType & value);
 	std::vector<ValueType> findHelper(Node* cur, const std::string & key,
-		std::vector<ValueType>& matches, bool b, bool notfirstChar) const;
+		std::vector<ValueType>& matches, bool exactMatchesOnly, bool notfirstChar) const;
 };
 
 #endif // TRIE_INCLUDED
@@ -96,8 +96,9 @@ std::vector<ValueType> Trie<ValueType>::find(const std::string & key, bool exact
 
 template<typename ValueType>
 std::vector<ValueType> Trie<ValueType>::findHelper(Node* cur, const std::string & key, 
-	std::vector<ValueType>& matches, bool b, bool notfirstChar) const
+	std::vector<ValueType>& matches, bool exactMatchesOnly, bool notfirstChar) const
 { 
+	bool b = exactMatchesOnly;
 	typename std::list<Node*>::iterator it = cur->chn.begin();
 	for (; it != cur->chn.end(); it++)
 	{
@@ -117,6 +118,7 @@ std::vector<ValueType> Trie<ValueType>::findHelper(Node* cur, const std::string 
 				findHelper(child, key.substr(1), matches, b, true);
 			}
 		}
+		b = exactMatchesOnly;
 	}
 	return matches;
 }

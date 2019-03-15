@@ -20,11 +20,13 @@ public:
 		bool exactMatchOnly, vector<DNAMatch>& matches) const;
     bool findRelatedGenomes(const Genome& query, int fragmentMatchLength,
 		bool exactMatchOnly, double matchPercentThreshold, vector<GenomeMatch>& results) const;
+
 private:
 	int m_searchMin;
 	vector<Genome> m_genomeVec;
 	Trie<DNAMatch> m_genomeData;
-	double round(double var) const;
+	void longestFragmentHelper(DNAMatch& curMatch, const Genome* curGenome, const string& fragment,
+		string& genomePart, string& fragPart, bool b, bool snip) const;
 };
 
 GenomeMatcherImpl::GenomeMatcherImpl(int minSearchLength)
@@ -64,10 +66,12 @@ bool GenomeMatcherImpl::findGenomesWithThisDNA(const string& fragment, int minim
 		return false;
 
 	string minFrag = fragment.substr(0, m_searchMin);  //get the first searchMin bases of the fragment
-	vector<DNAMatch> someMatches = m_genomeData.find(minFrag, exactMatchOnly);       //now search for thme
+	vector<DNAMatch> someMatches = m_genomeData.find(minFrag, exactMatchOnly);     
 
 	//now somematches holds fragment matches of the first searchMin bases, found by the trie
 	int n = someMatches.size();
+	if (n == 0)
+		return false;
 	for (int i = 0; i != n; i++)      //iterate over the matches
 	{
 		DNAMatch* curMatch = &(someMatches[i]);
@@ -76,29 +80,16 @@ bool GenomeMatcherImpl::findGenomesWithThisDNA(const string& fragment, int minim
 			if (m_genomeVec[i].name() == curMatch->genomeName)
 				curGenome = &m_genomeVec[i];
 		}
-		int curMatchPos = curMatch->position + m_searchMin;      //get the match's position in the genome
-		string genNextBase;
-		string fragNextBase;
-		int curPos = m_searchMin;
-		if (curPos <= fsize)
-			fragNextBase += fragment[curPos];      //get the next base of the fragment
-		if (curGenome == nullptr || !curGenome->extract(curMatchPos, 1, genNextBase))  //get the next base from the genome
-			genNextBase = "";
-		while (genNextBase == fragNextBase && fragNextBase != "")         //matches
-		{
-			curMatch->length++;                      //increase length info
-			curPos++;
-			curMatchPos++;
-			if (curPos <= fsize)
-				fragNextBase = fragment[curPos];      //get the next base of the fragment
-			if (!curGenome->extract(curMatchPos, 1, genNextBase))  //get the next base from the genome
-				genNextBase = "";
-		}
+
+		string fragPart = minFrag;
+		string genomePart;
+		curGenome->extract(curMatch->position, curMatch->length, genomePart);
+		bool snip = false;
+		if (fragPart != genomePart)
+			snip = true;
+		longestFragmentHelper(someMatches[i], curGenome, fragment, genomePart, fragPart, exactMatchOnly, snip);
 	}
 	//now somematches should hold the longest fragments. need to sort
-	if (n == 0)
-		return false;
-
 	DNAMatch curMatch = someMatches[0];
 	string curGenomeName = curMatch.genomeName;
 	bool needToPush = true;
@@ -128,6 +119,32 @@ bool GenomeMatcherImpl::findGenomesWithThisDNA(const string& fragment, int minim
 			matches.push_back(target);
 	}
 	return matches.size() > 0;
+}
+
+void GenomeMatcherImpl::longestFragmentHelper(DNAMatch& curMatch, const Genome* curGenome, const string& fragment, 
+	string& genomePart, string& fragPart, bool b, bool snip) const
+{
+	if (fragPart != genomePart) {
+		snip = true;
+		b = true;
+	}
+	int fsize = fragment.size();
+	int length = curMatch.length;
+
+	if (length < fsize)
+		fragPart += fragment[length];      //get the next base of the fragment
+	else 
+		return;
+	
+	if (curGenome == nullptr || !curGenome->extract(curMatch.position, length + 1, genomePart))  //get the next base from the genome
+		genomePart = "";
+	if (genomePart[length] == fragPart[length] || (snip && !b) || !b)        //matches
+	{
+		if (genomePart[length] != fragPart[length])
+			b = true;
+		curMatch.length++;                      //increase length info
+		longestFragmentHelper(curMatch, curGenome, fragment, genomePart, fragPart, b, snip);
+	}
 }
 
 bool GenomeMatcherImpl::findRelatedGenomes(const Genome& query, int fragmentMatchLength, 
@@ -168,12 +185,6 @@ bool GenomeMatcherImpl::findRelatedGenomes(const Genome& query, int fragmentMatc
 	return results.size() > 0;
 }
 
-double GenomeMatcherImpl::round(double var) const
-{
-	double value = (int)(0.5 + var * 100);
-	return (double) (value / 100);
-}
-
 bool compareGenomeMatch(const GenomeMatch & lhs, const GenomeMatch & rhs)
 {
 	if (lhs.percentMatch > rhs.percentMatch)
@@ -181,34 +192,6 @@ bool compareGenomeMatch(const GenomeMatch & lhs, const GenomeMatch & rhs)
 	if (lhs.percentMatch < rhs.percentMatch)
 		return false;
 	return lhs.genomeName < rhs.genomeName;
-}
-
-int main() {
-	GenomeMatcher gm(3);
-	Genome yeti("yeti", "aaaaccccggggtttt");
-	Genome other("other", "aaaaccccggggtttt");
-	gm.addGenome(yeti);
-	vector<GenomeMatch> gmv;
-/*
-	vector <DNAMatch> m;
-	if (gm.findGenomesWithThisDNA("aaaaccccggggtttt", 12, true, m))
-		cerr << "Found some matches " << m.size() << endl;
-	else
-		cerr << "find returned false" << endl;
-	for (int i = 0; i != m.size(); i++) {
-		cerr << "here's a match: " << m[i].genomeName << " position " 
-			<< m[i].position << " length " << m[i].length << endl;
-	}
-	*/
-	
-	if (gm.findRelatedGenomes(other, 12, true, 20, gmv))
-		cerr << "Found some matches " << gmv.size() << endl;
-	else
-		cerr << "find returned false" << endl;
-	for (int i = 0; i != gmv.size(); i++) {
-		cerr << "here's a match: " << gmv[i].genomeName << " percent match "
-			<< gmv[i].percentMatch << endl;
-	}
 }
 
 //******************** GenomeMatcher functions ********************************
