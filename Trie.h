@@ -32,7 +32,6 @@ private:
 		std::vector<ValueType>& matches, bool exactMatchesOnly, bool notfirstChar) const;
 };
 
-#endif // TRIE_INCLUDED
 
 template<typename ValueType>
 Trie<ValueType>::Trie()
@@ -137,3 +136,5 @@ void Trie<ValueType>::deleteTree(Node * cur) //ASK ABOUT DELETE FUNC
 
 	delete cur;
 }
+
+#endif // TRIE_INCLUDED
